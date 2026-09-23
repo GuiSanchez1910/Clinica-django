@@ -74,7 +74,9 @@ Status previstos:
 
 ## O que foi desenvolvido até o momento
 
-A implementação foi iniciada pela entidade **Especialidade**.
+Foram implementadas as entidades **Especialidade** e **Paciente**.
+
+Médico e Consulta continuam previstos.
 
 ### Model
 
@@ -135,6 +137,86 @@ Exemplo:
 
 ```http
 GET /api/especialidades/?nome=cardio
+```
+
+O filtro utiliza `icontains`, permitindo pesquisar por parte do nome sem diferenciar maiúsculas e minúsculas.
+
+### Paciente
+
+```python
+class Paciente(models.Model):
+    nome = models.CharField(max_length=100)
+    cpf = models.CharField(
+        max_length=11,
+        unique=True
+    )
+    data_nascimento = models.DateField()
+    telefone = models.CharField(max_length=20)
+
+    def __str__(self):
+        return self.nome
+```
+
+### Unicidade do CPF
+
+O campo `cpf` utiliza `unique=True`, impedindo que dois pacientes tenham o mesmo CPF no banco.
+
+Exemplo:
+
+```text
+12345678901 → permitido
+12345678901 → não permitido
+```
+
+### Regras de negócio do paciente
+
+Foi criado um `PacienteService`.
+
+As regras são aplicadas na criação (`POST`) e na atualização (`PUT` e `PATCH`):
+
+> O CPF deve conter exatamente 11 dígitos numéricos.
+
+> A data de nascimento deve ser anterior a hoje.
+
+Exemplo inválido:
+
+```json
+{
+    "nome": "Ana Souza",
+    "cpf": "123.456.789-01",
+    "data_nascimento": "1990-05-10",
+    "telefone": "11999999999"
+}
+```
+
+```json
+{
+    "nome": "Ana Souza",
+    "cpf": "12345678901",
+    "data_nascimento": "2099-01-01",
+    "telefone": "11999999999"
+}
+```
+
+Exemplo válido:
+
+```json
+{
+    "nome": "Ana Souza",
+    "cpf": "12345678901",
+    "data_nascimento": "1990-05-10",
+    "telefone": "11999999999"
+}
+```
+
+### Filtro por nome do paciente
+
+Foi criado um filtro com `django-filter` para pesquisar pacientes pelo nome.
+
+Exemplo:
+
+```http
+GET /api/pacientes/?nome=ana
 ```
 
 O filtro utiliza `icontains`, permitindo pesquisar por parte do nome sem diferenciar maiúsculas e minúsculas.
@@ -230,6 +312,12 @@ API de especialidades:
 http://127.0.0.1:8000/api/especialidades/
 ```
 
+API de pacientes:
+
+```text
+http://127.0.0.1:8000/api/pacientes/
+```
+
 ---
 
 # Testando a API
@@ -298,6 +386,78 @@ DELETE /api/especialidades/1/
 
 ```http
 GET /api/especialidades/?nome=cardio
+```
+
+# Testando pacientes
+
+## Listar
+
+```http
+GET /api/pacientes/
+```
+
+## Buscar por ID
+
+```http
+GET /api/pacientes/1/
+```
+
+## Criar
+
+```http
+POST /api/pacientes/
+```
+
+```json
+{
+    "nome": "Ana Souza",
+    "cpf": "12345678901",
+    "data_nascimento": "1990-05-10",
+    "telefone": "11999999999"
+}
+```
+
+## PUT
+
+```http
+PUT /api/pacientes/1/
+```
+
+```json
+{
+    "nome": "Ana Souza",
+    "cpf": "12345678901",
+    "data_nascimento": "1990-05-10",
+    "telefone": "11988887777"
+}
+```
+
+O `PUT` representa uma atualização completa. As regras de CPF e data de nascimento também são validadas.
+
+## PATCH
+
+```http
+PATCH /api/pacientes/1/
+```
+
+```json
+{
+    "telefone": "11977776666"
+}
+```
+
+O `PATCH` permite uma atualização parcial. Se `cpf` ou `data_nascimento` forem enviados, as mesmas regras são aplicadas.
+
+## DELETE
+
+```http
+DELETE /api/pacientes/1/
+```
+
+## Filtrar por nome
+
+```http
+GET /api/pacientes/?nome=ana
 ```
 
 ---

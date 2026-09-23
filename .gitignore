@@ -1,0 +1,11 @@
+# Ambiente virtual
+.venv/
+venv/
+env/
+
+# Banco SQLite local
+db.sqlite3
+db.sqlite3-journal
+
+# Arquivos de ambiente
+.env

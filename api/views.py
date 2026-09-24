@@ -1,9 +1,10 @@
 from rest_framework import serializers, viewsets
-from .models import Especialidade, Paciente
+from .models import Especialidade, Paciente, Medico
 from django_filters.rest_framework import DjangoFilterBackend
-from .serializers import EspecialidadeSerializer, PacienteSerializer
-from .services import EspecialidadeService, PacienteService
-from .filters import EspecialidadeFilter, PacienteFilter
+from .serializers import EspecialidadeSerializer, PacienteSerializer, MedicoSerializer
+from .services import EspecialidadeService, PacienteService, MedicoService
+from .filters import EspecialidadeFilter, PacienteFilter, MedicoFilter
+
 
 class EspecialidadeViewSet(viewsets.ModelViewSet):
     queryset = Especialidade.objects.all()
@@ -49,6 +50,38 @@ class PacienteViewSet(viewsets.ModelViewSet):
                     "data_nascimento",
                     serializer.instance.data_nascimento
                 )
+            )
+        except ValueError as e:
+            raise serializers.ValidationError(str(e))
+
+        serializer.save()
+
+class MedicoViewSet(viewsets.ModelViewSet):
+    queryset = Medico.objects.all()
+    serializer_class = MedicoSerializer
+
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = MedicoFilter
+
+    def perform_create(self, serializer):
+        dados = serializer.validated_data
+        try:
+            medico = MedicoService.criar(
+                nome=dados["nome"],
+                crm=dados["crm"],
+                telefone=dados["telefone"],
+                especialidade=dados["especialidade"]
+            )
+            serializer.instance = medico
+        except ValueError as e:
+            raise serializers.ValidationError(str(e))
+
+    def perform_update(self, serializer):
+        dados = serializer.validated_data
+        try:
+            MedicoService.validar(
+                crm=dados.get("crm", serializer.instance.crm),
+                telefone=dados.get("telefone", serializer.instance.telefone)
             )
         except ValueError as e:
             raise serializers.ValidationError(str(e))

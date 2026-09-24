@@ -1,6 +1,6 @@
 from datetime import date
 
-from .models import Especialidade, Paciente
+from .models import Especialidade, Paciente, Medico
 
 
 class EspecialidadeService:
@@ -41,4 +41,24 @@ class PacienteService:
             cpf=cpf,
             data_nascimento=data_nascimento,
             telefone=telefone
+        )
+
+class MedicoService:
+    @staticmethod
+    def validar(crm, telefone):
+        if not crm:
+            raise ValueError("O campo CRM é obrigatório e não pode estar vazio.")
+
+        if len(telefone) < 8:
+            raise ValueError("O telefone informado é inválido.")
+
+    @staticmethod
+    def criar(nome, crm, telefone, especialidade):
+        MedicoService.validar(crm, telefone)
+
+        return Medico.objects.create(
+            nome=nome,
+            crm=crm,
+            telefone=telefone,
+            especialidade=especialidade
         )

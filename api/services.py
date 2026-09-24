@@ -50,7 +50,7 @@ class MedicoService:
             raise ValueError("O campo CRM é obrigatório e não pode estar vazio.")
 
         if len(telefone) < 8:
-            raise ValueError("O telefone informado é inválido.")
+            raise ValueError("O telefone deve possuir pelo menos 8 dígitos")
 
     @staticmethod
     def criar(nome, crm, telefone, especialidade):

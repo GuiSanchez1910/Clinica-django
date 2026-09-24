@@ -74,9 +74,9 @@ Status previstos:
 
 ## O que foi desenvolvido até o momento
 
-Foram implementadas as entidades **Especialidade** e **Paciente**.
+Foram implementadas as entidades **Especialidade**, **Paciente** e **Medico**.
 
-Médico e Consulta continuam previstos.
+Apenas a Consulta continua prevista.
 
 ### Model
 
@@ -221,6 +221,93 @@ GET /api/pacientes/?nome=ana
 
 O filtro utiliza `icontains`, permitindo pesquisar por parte do nome sem diferenciar maiúsculas e minúsculas.
 
+### Medico
+
+```python
+class Medico(models.Model):
+    nome = models.CharField(max_length=100)
+    crm = models.CharField(
+        max_length=20,
+        unique=True
+    )
+    telefone = models.CharField(max_length=20)
+    especialidade = models.ForeignKey(
+        Especialidade,
+        on_delete=models.CASCADE,
+        related_name='medicos'
+    )
+
+    def __str__(self):
+        return f"{self.nome} - {self.crm}"
+```
+
+### Unidade do CRM
+O campo crm utiliza **unique=True**, garantindo que não existam dois médicos cadastrados com o mesmo CRM.
+
+### Regras de negócio do médico
+
+Foi criado um `MedicoService`.
+
+As regras são aplicadas na criação (`POST`) e na atualização (`PUT` e `PATCH`):
+
+> O campo CRM é obrigatório e não pode estar vazio..
+
+> O telefone deve possuir pelo menos 8 dígitos.
+
+Exemplo inválido:
+
+```json
+{
+    "nome": "Carlos",
+    "crm": "123456",
+    "telefone": "12345",
+    "especialidade": 1
+}
+```
+
+Exemplo válido:
+
+```json
+{
+    "nome": "Carlos",
+    "crm": "123456",
+    "telefone": "41999998888",
+    "especialidade": 1
+}
+```
+
+### Personalização de resposta no Serializer
+
+O `MedicoSerializer` sobrescreve o método `to_representation()` para melhorar a exibição dos dados:
+
+
+> No envio de dados (POST ou PUT), aceita o id numérico da chave estrangeira da especialidade.
+
+> Na resposta de leitura (GET), substitui o ID numérico pelo nome da especialidade vinculada.
+
+Exemplo de retorno JSON:
+
+```json
+{
+    "id": 1,
+    "nome": "Dr. Carlos",
+    "crm": "123456",
+    "telefone": "41999998888",
+    "especialidade": "Cardiologia"
+}
+```
+
+### Filtro por nome da especialidade, nome do médico e CRM
+
+Foi criado o `MedicoFilter` utilizando `django-filter`. A busca por especialidade navega pela chave estrangeira **(especialidade__nome)**, permitindo filtrar médicos diretamente pelo nome da especialidade médica.
+
+Exemplos:
+
+```HTTP
+GET /api/medicos/?especialidade=cardio
+GET /api/medicos/?nome=carlos
+GET /api/medicos/?crm=123456
+```
 ---
 
 # Como executar o projeto do zero
@@ -316,6 +403,12 @@ API de pacientes:
 
 ```text
 http://127.0.0.1:8000/api/pacientes/
+```
+
+API de medicos:
+
+```text
+http://127.0.0.1:8000/api/medicos/
 ```
 
 ---
@@ -458,6 +551,90 @@ DELETE /api/pacientes/1/
 
 ```http
 GET /api/pacientes/?nome=ana
+```
+
+# Testando medicos
+
+## Listar
+
+```http
+GET /api/medicos/
+```
+
+## Buscar por ID
+
+```http
+GET /api/medicos/1/
+```
+
+## Criar
+
+```http
+POST /api/medicos/
+```
+
+```json
+{
+    "nome": "Carlos Eduardo",
+    "crm": "123456",
+    "telefone": "41999998888",
+    "especialidade": 1
+}
+```
+
+## PUT
+
+```http
+PUT /api/medicos/1/
+```
+
+```json
+{
+    "nome": "Carlos Eduardo Silva",
+    "crm": "123456",
+    "telefone": "41988887777",
+    "especialidade": 1
+}
+```
+
+O `PUT` representa uma atualização completa.
+
+## PATCH
+
+```http
+PATCH /api/medicos/1/
+```
+
+```json
+{
+    "telefone": "41977776666"
+}
+```
+
+O `PATCH` permite uma atualização parcial.
+
+## DELETE
+
+```http
+DELETE /api/medicos/1/
+```
+
+## Filtrar por nome
+
+```http
+GET /api/medicos/?nome=carlos
+```
+
+## Filtrar por CRM
+
+```http
+GET /api/medicos/?crm=123456
+```
+
+## Filtrar por especialidade
+
+```http
+GET /api/medicos/?especialidade=cardiologia
 ```
 
 ---

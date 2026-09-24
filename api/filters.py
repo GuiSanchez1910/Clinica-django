@@ -1,6 +1,6 @@
 import django_filters
 
-from .models import Especialidade, Paciente, Medico
+from .models import Especialidade, Paciente, Medico, Consulta
 
 
 class EspecialidadeFilter(django_filters.FilterSet):
@@ -43,3 +43,33 @@ class MedicoFilter(django_filters.FilterSet):
     class Meta:
         model = Medico
         fields = ['nome', 'crm', 'especialidade']
+
+class ConsultaFilter(django_filters.FilterSet):
+    medico = django_filters.CharFilter(
+        field_name="medico__nome",
+        lookup_expr="icontains"
+    )
+
+    paciente = django_filters.CharFilter(
+        field_name="paciente__nome",
+        lookup_expr="icontains"
+    )
+
+    status = django_filters.CharFilter(
+        field_name="status",
+        lookup_expr="iexact"
+    )
+
+    data_inicio = django_filters.DateFilter(
+        field_name="data_hora__date",
+        lookup_expr="gte"
+    )
+
+    data_fim = django_filters.DateFilter(
+        field_name="data_hora__date",
+        lookup_expr="lte"
+    )
+
+    class Meta:
+        model = Consulta
+        fields = ['medico', 'paciente', 'status', 'data_inicio', 'data_fim']

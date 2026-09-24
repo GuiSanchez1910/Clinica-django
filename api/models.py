@@ -35,3 +35,31 @@ class Medico(models.Model):
 
     def __str__(self):
         return f'{self.nome} - {self.crm}'
+
+class Consulta(models.Model):
+    STATUS_CHOICES = [
+        ('Agendada', 'Agendada'),
+        ('Concluída', 'Concluída'),
+        ('Cancelada', 'Cancelada'),
+    ]
+
+    medico = models.ForeignKey(
+        'Medico',
+        on_delete=models.CASCADE,
+        related_name='consultas'
+    )
+    paciente = models.ForeignKey(
+        'Paciente',
+        on_delete=models.CASCADE,
+        related_name='consultas'
+    )
+    data_hora = models.DateTimeField()
+    observacoes = models.TextField(blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='Agendada'
+    )
+
+    def __str__(self):
+        return f'{self.paciente.nome} - {self.medico.nome} - {self.data_hora}'

@@ -74,9 +74,7 @@ Status previstos:
 
 ## O que foi desenvolvido até o momento
 
-Foram implementadas as entidades **Especialidade**, **Paciente** e **Medico**.
-
-Apenas a Consulta continua prevista.
+Foram implementadas as entidades **Especialidade**, **Paciente**, **Medico** e **Consulta**.
 
 ### Model
 
@@ -308,6 +306,111 @@ GET /api/medicos/?especialidade=cardio
 GET /api/medicos/?nome=carlos
 GET /api/medicos/?crm=123456
 ```
+
+### Consulta
+
+```python
+class Consulta(models.Model):
+    STATUS_CHOICES = [
+        ('Agendada', 'Agendada'),
+        ('Concluída', 'Concluída'),
+        ('Cancelada', 'Cancelada'),
+    ]
+
+    medico = models.ForeignKey(
+        'Medico',
+        on_delete=models.CASCADE,
+        related_name='consultas'
+    )
+    paciente = models.ForeignKey(
+        'Paciente',
+        on_delete=models.CASCADE,
+        related_name='consultas'
+    )
+    data_hora = models.DateTimeField()
+    observacoes = models.TextField(blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='Agendada'
+    )
+```
+
+Relacionamentos: um `Medico` pode possuir várias `Consultas` (1:N) e um `Paciente` pode possuir várias `Consultas` (1:N).
+
+### Status da consulta
+
+O campo `status` utiliza `choices`, aceitando apenas `Agendada`, `Concluída` ou `Cancelada`. Quando não é informado, a consulta é criada como `Agendada`.
+
+O campo `observacoes` é opcional (`blank=True`).
+
+### Regra de negócio da consulta
+
+Foi criado um `ConsultaService`.
+
+A regra é aplicada na criação (`POST`):
+
+> Uma consulta nova precisa estar marcada para uma data futura.
+
+Exemplo inválido:
+
+```json
+{
+    "medico": 1,
+    "paciente": 1,
+    "data_hora": "2020-01-10T14:30:00Z"
+}
+```
+
+Exemplo válido:
+
+```json
+{
+    "medico": 1,
+    "paciente": 1,
+    "data_hora": "2099-01-10T14:30:00Z",
+    "observacoes": "Primeira consulta"
+}
+```
+
+### Personalização de resposta no Serializer
+
+Assim como no `MedicoSerializer`, o `ConsultaSerializer` sobrescreve o método `to_representation()`:
+
+> No envio de dados (POST ou PUT), aceita os ids numéricos do médico e do paciente.
+
+> Na resposta de leitura (GET), substitui os ids pelos nomes do médico e do paciente.
+
+Exemplo de retorno JSON:
+
+```json
+{
+    "id": 1,
+    "medico": "Dr. Carlos",
+    "paciente": "Ana Souza",
+    "data_hora": "2099-01-10T14:30:00Z",
+    "observacoes": "Primeira consulta",
+    "status": "Agendada"
+}
+```
+
+### Filtros da consulta
+
+Foi criado o `ConsultaFilter` utilizando `django-filter`:
+
+- `medico`: nome do médico (`medico__nome`, `icontains`)
+- `paciente`: nome do paciente (`paciente__nome`, `icontains`)
+- `status`: status exato, sem diferenciar maiúsculas e minúsculas (`iexact`)
+- `data_inicio` e `data_fim`: intervalo de datas da consulta (`data_hora__date`, `gte` e `lte`)
+
+Exemplos:
+
+```http
+GET /api/consultas/?medico=carlos
+GET /api/consultas/?paciente=ana
+GET /api/consultas/?status=agendada
+GET /api/consultas/?data_inicio=2099-01-01&data_fim=2099-01-31
+```
 ---
 
 # Como executar o projeto do zero
@@ -409,6 +512,12 @@ API de medicos:
 
 ```text
 http://127.0.0.1:8000/api/medicos/
+```
+
+API de consultas:
+
+```text
+http://127.0.0.1:8000/api/consultas/
 ```
 
 ---
@@ -635,6 +744,99 @@ GET /api/medicos/?crm=123456
 
 ```http
 GET /api/medicos/?especialidade=cardiologia
+```
+
+# Testando consultas
+
+## Listar
+
+```http
+GET /api/consultas/
+```
+
+## Buscar por ID
+
+```http
+GET /api/consultas/1/
+```
+
+## Criar
+
+```http
+POST /api/consultas/
+```
+
+```json
+{
+    "medico": 1,
+    "paciente": 1,
+    "data_hora": "2099-01-10T14:30:00Z",
+    "observacoes": "Primeira consulta"
+}
+```
+
+A `data_hora` deve estar no futuro. O `status` é opcional e, por padrão, é `Agendada`.
+
+## PUT
+
+```http
+PUT /api/consultas/1/
+```
+
+```json
+{
+    "medico": 1,
+    "paciente": 1,
+    "data_hora": "2099-01-10T15:00:00Z",
+    "observacoes": "Horário alterado",
+    "status": "Agendada"
+}
+```
+
+O `PUT` representa uma atualização completa.
+
+## PATCH
+
+```http
+PATCH /api/consultas/1/
+```
+
+```json
+{
+    "status": "Concluída"
+}
+```
+
+O `PATCH` permite uma atualização parcial, como alterar o status da consulta.
+
+## DELETE
+
+```http
+DELETE /api/consultas/1/
+```
+
+## Filtrar por médico
+
+```http
+GET /api/consultas/?medico=carlos
+```
+
+## Filtrar por paciente
+
+```http
+GET /api/consultas/?paciente=ana
+```
+
+## Filtrar por status
+
+```http
+GET /api/consultas/?status=agendada
+```
+
+## Filtrar por intervalo de datas
+
+```http
+GET /api/consultas/?data_inicio=2099-01-01&data_fim=2099-01-31
 ```
 
 ---

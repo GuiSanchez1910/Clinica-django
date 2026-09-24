@@ -1,9 +1,9 @@
 from rest_framework import serializers, viewsets
-from .models import Especialidade, Paciente, Medico
+from .models import Especialidade, Paciente, Medico, Consulta
 from django_filters.rest_framework import DjangoFilterBackend
-from .serializers import EspecialidadeSerializer, PacienteSerializer, MedicoSerializer
-from .services import EspecialidadeService, PacienteService, MedicoService
-from .filters import EspecialidadeFilter, PacienteFilter, MedicoFilter
+from .serializers import EspecialidadeSerializer, PacienteSerializer, MedicoSerializer, ConsultaSerializer
+from .services import EspecialidadeService, PacienteService, MedicoService, ConsultaService
+from .filters import EspecialidadeFilter, PacienteFilter, MedicoFilter, ConsultaFilter
 
 
 class EspecialidadeViewSet(viewsets.ModelViewSet):
@@ -87,3 +87,24 @@ class MedicoViewSet(viewsets.ModelViewSet):
             raise serializers.ValidationError(str(e))
 
         serializer.save()
+
+class ConsultaViewSet(viewsets.ModelViewSet):
+    queryset = Consulta.objects.all()
+    serializer_class = ConsultaSerializer
+
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ConsultaFilter
+
+    def perform_create(self, serializer):
+        dados = serializer.validated_data
+        try:
+            consulta = ConsultaService.criar(
+                medico=dados["medico"],
+                paciente=dados["paciente"],
+                data_hora=dados["data_hora"],
+                observacoes=dados.get("observacoes", ""),
+                status=dados.get("status", "Agendada")
+            )
+            serializer.instance = consulta
+        except ValueError as e:
+            raise serializers.ValidationError(str(e))

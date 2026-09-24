@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Especialidade, Paciente, Medico
+from .models import Especialidade, Paciente, Medico, Consulta
 
 class EspecialidadeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -38,5 +38,25 @@ class MedicoSerializer(serializers.ModelSerializer):
 
         if instance and hasattr(instance, 'especialidade') and instance.especialidade:
             representation['especialidade'] = instance.especialidade.nome
+
+        return representation
+
+class ConsultaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Consulta
+        fields = [
+            "id",
+            "medico",
+            "paciente",
+            "data_hora",
+            "observacoes",
+            "status",
+        ]
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        representation['medico'] = instance.medico.nome
+        representation['paciente'] = instance.paciente.nome
 
         return representation

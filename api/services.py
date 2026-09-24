@@ -1,6 +1,8 @@
 from datetime import date
 
-from .models import Especialidade, Paciente, Medico
+from django.utils import timezone
+
+from .models import Especialidade, Paciente, Medico, Consulta
 
 
 class EspecialidadeService:
@@ -61,4 +63,22 @@ class MedicoService:
             crm=crm,
             telefone=telefone,
             especialidade=especialidade
+        )
+
+class ConsultaService:
+    @staticmethod
+    def validar(data_hora):
+        if data_hora <= timezone.now():
+            raise ValueError("A consulta deve ser marcada para uma data futura.")
+
+    @staticmethod
+    def criar(medico, paciente, data_hora, observacoes, status):
+        ConsultaService.validar(data_hora)
+
+        return Consulta.objects.create(
+            medico=medico,
+            paciente=paciente,
+            data_hora=data_hora,
+            observacoes=observacoes,
+            status=status
         )

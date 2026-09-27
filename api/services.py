@@ -8,11 +8,15 @@ from .models import Especialidade, Paciente, Medico, Consulta
 class EspecialidadeService:
 
     @staticmethod
-    def criar(nome, descricao):
+    def validar(descricao):
         if len(descricao.strip()) <= 5:
             raise ValueError(
                 "A descrição deve ter mais de 5 caracteres."
             )
+
+    @staticmethod
+    def criar(nome, descricao):
+        EspecialidadeService.validar(descricao)
 
         return Especialidade.objects.create(
             nome=nome,

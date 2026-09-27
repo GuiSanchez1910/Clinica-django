@@ -22,6 +22,21 @@ class EspecialidadeViewSet(viewsets.ModelViewSet):
         except ValueError as e:
             raise serializers.ValidationError(str(e))
 
+    def perform_update(self, serializer):
+        dados = serializer.validated_data
+
+        try:
+            EspecialidadeService.validar(
+                descricao=dados.get(
+                    "descricao",
+                    serializer.instance.descricao
+                )
+            )
+        except ValueError as e:
+            raise serializers.ValidationError(str(e))
+
+        serializer.save()
+
 
 class PacienteViewSet(viewsets.ModelViewSet):
     queryset = Paciente.objects.all()
